@@ -24,6 +24,7 @@ public class SensitivityBatch {
 	int penaltyType; 
 	String outDir; 
 	TreeSet<Integer> levelNums = Sets.newTreeSet();
+	private int partitionSize;
 
 	
 	public static void main(String[] args) {
@@ -58,7 +59,7 @@ public class SensitivityBatch {
 			String outFile = localOutDir + "/resultFile." + level;									 
 			
 			sExp.doSensitivityExp(codePath, graphFile, totalGraphs, penaltyType, 
-								outFile, level, localWorkDir);
+								outFile, level, localWorkDir, partitionSize);
 			
 		}
 		
@@ -92,12 +93,15 @@ public class SensitivityBatch {
 						this.outDir = value;
 					} else if (key.equalsIgnoreCase("levelNums")) {
 						processLevelNumStr(value);
-					} else if (key.equalsIgnoreCase("organism"))
+					} else if (key.equalsIgnoreCase("organism")) {
                         this.organism = value;
+					} else if (key.equalsIgnoreCase("partitionSize")) {
+						this.partitionSize = Integer.parseInt(value);
+					}
 				}
 			}
 			
-			inFile.close();
+				inFile.close();
 			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

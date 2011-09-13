@@ -19,7 +19,8 @@ public class SensitivityExp {
 							int penaltyType, 
 							String outFile, 
 							int levelNum,
-							String workDir) {
+							String workDir, 
+							int partitionSize) {
 
 		try {
 			
@@ -43,7 +44,7 @@ public class SensitivityExp {
 			
 			// get the levelFile path. For that run Gunhan's code on the original graphFile.
 			String oriLevelFile = levelFilePrefix + ".ori";
-			createLevelFile(codePath, graphFile, levelNum, oriLevelFile, penaltyType);
+			createLevelFile(codePath, graphFile, levelNum, oriLevelFile, penaltyType, partitionSize);
 			
 			ZScore zscore = new ZScore(graphFile, oriLevelFile, penaltyType);
 			Scores scores = zscore.getZScore(totalGraphs, penaltyType);
@@ -67,7 +68,7 @@ public class SensitivityExp {
 				String localLevelFile = levelFilePrefix + "." + shuffleCountVec.get(j);					
 
 				createLevelFile(codePath, localGraphFile, levelNum, 
-								localLevelFile, penaltyType);				
+								localLevelFile, penaltyType, partitionSize);				
 				
 				zscore = new ZScore(localGraphFile, localLevelFile, penaltyType);
 				scores = zscore.getZScore(totalGraphs, penaltyType);
@@ -120,7 +121,7 @@ public class SensitivityExp {
 						String graphFile, 
 						int level, 
 						String outFile, 
-						int penaltyType) {		
+						int penaltyType, int partitionSize) {		
 		try {
 
 			Runtime rt = Runtime.getRuntime();
@@ -129,7 +130,8 @@ public class SensitivityExp {
 							graphFile + " " +
 							level + " " +
 							outFile + " " +
-							penaltyType;
+							penaltyType + " " +
+							partitionSize;
 			
 			Process pro = rt.exec(command);
 			

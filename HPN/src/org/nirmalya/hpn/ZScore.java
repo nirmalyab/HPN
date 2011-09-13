@@ -24,8 +24,8 @@ import com.google.common.collect.Multimap;
 
 public class ZScore {
 	
-	static int ADJ_PENALTY = 0;
-	static int REACH_PENALTY = 1;
+	public static int ADJ_PENALTY = 0;
+	public static int REACH_PENALTY = 1;
 	
 	int totalNode = 0;
 	List<String> levelKeys = Lists.newArrayList();

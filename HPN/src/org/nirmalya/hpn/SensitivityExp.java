@@ -44,7 +44,7 @@ public class SensitivityExp {
 			
 			// get the levelFile path. For that run Gunhan's code on the original graphFile.
 			String oriLevelFile = levelFilePrefix + ".ori";
-			createLevelFile(codePath, graphFile, levelNum, oriLevelFile, penaltyType, partitionSize);
+			HPNUlilities.createLevelFile(codePath, graphFile, levelNum, oriLevelFile, penaltyType, partitionSize);
 			
 			ZScore zscore = new ZScore(graphFile, oriLevelFile, penaltyType);
 			Scores scores = zscore.getZScore(totalGraphs, penaltyType);
@@ -63,11 +63,11 @@ public class SensitivityExp {
 				//get localGraphPath				
 				String localGraphFile = graphFilePrefix + "." + shuffleCountVec.get(j);	
 				
-				dumpLocalGraph(mapList.get(j), localGraphFile);
+				HPNUlilities.dumpLocalGraph(mapList.get(j), localGraphFile);
 				// get the levelFile path
 				String localLevelFile = levelFilePrefix + "." + shuffleCountVec.get(j);					
 
-				createLevelFile(codePath, localGraphFile, levelNum, 
+				HPNUlilities.createLevelFile(codePath, localGraphFile, levelNum, 
 								localLevelFile, penaltyType, partitionSize);				
 				
 				zscore = new ZScore(localGraphFile, localLevelFile, penaltyType);
@@ -95,60 +95,7 @@ public class SensitivityExp {
 		}
 	}
 	
-	private void dumpLocalGraph(Multimap<String, String> multimap,
-			String localGraphFile) {
-		
-		try {
-			PrintWriter writer = new PrintWriter(new FileWriter(localGraphFile));
-			
-			for (Entry<String, String> e : multimap.entries()) {
-				String first = e.getKey();
-				String sec = e.getValue();
-				
-				writer.println(first + "  " + sec);
-			}
-			
-			writer.close();
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-				
-	}
+	
 
-	private void  createLevelFile (String codePath, 
-						String graphFile, 
-						int level, 
-						String outFile, 
-						int penaltyType, int partitionSize) {		
-		try {
-
-			Runtime rt = Runtime.getRuntime();
-			
-			String command = codePath + " " +
-							graphFile + " " +
-							level + " " +
-							outFile + " " +
-							penaltyType + " " +
-							partitionSize;
-			
-			Process pro = rt.exec(command);
-			
-			int status;
-			if (0==(status = pro.waitFor())) {
-				String errStr = "The process " + command +
-				" exited abnormally, whith exist status: " + status;
-				throw new RuntimeException(errStr);
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}		
-		
-	}	
-
+	
 }

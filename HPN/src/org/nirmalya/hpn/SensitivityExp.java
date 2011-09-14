@@ -52,7 +52,7 @@ public class SensitivityExp {
 			PrintWriter outWriter = new PrintWriter(new FileWriter(new File(outFile)));
 			
 			String outStr = " Shuffle Count: 0 " + " Penalty: " 
-						+ scores.penalty + " ZScore: " + scores.ZScore;
+						+ scores.penalty + " ZScore: " + scores.zScore;
 			
 			//System.out.println(outStr);				
 			outWriter.println(outStr);		
@@ -75,7 +75,7 @@ public class SensitivityExp {
 				
 				outStr = " Shuffle Count: " + shuffleCountVec.get(j)
 								+ " Penalty: " + scores.penalty 
-								+ " ZScore: " + scores.ZScore;
+								+ " ZScore: " + scores.zScore;
 				
 				//System.out.println(outStr);				
 				outWriter.println(outStr);

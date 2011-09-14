@@ -294,7 +294,7 @@ public class ZScore {
 		double adjStd = Math.sqrt(adjVariance);
 		
 		//printFrequency(levelVals);
-		double localAdjPenalty = localGraph.calculateAdjacencyPenalty(levelVals);
+		int localAdjPenalty = localGraph.calculateAdjacencyPenalty(levelVals);
 		
 		double ZScoreAdj = (adjMean - localAdjPenalty) / adjStd;
 		return new Scores(ZScoreAdj, localAdjPenalty);
@@ -306,7 +306,7 @@ public class ZScore {
 		double reachVariance = StatUtils.variance(localReachPenaltyArr);
 		double reachStd = Math.sqrt(reachVariance);
 		
-		double localReachPenalty = localGraph.calcualteReachabilityPenalty(levelVals);
+		int localReachPenalty = localGraph.calcualteReachabilityPenalty(levelVals);
 		
 		double ZScoreReach = (reachMean - localReachPenalty) / reachStd;
 		
@@ -341,7 +341,7 @@ public class ZScore {
 		if (penaltyType == ZScore.ADJ_PENALTY) {
 		System.out.println(
 				"Adjacency ZScore: "
-				+ scores.ZScore 
+				+ scores.zScore 
 				+ "\n"
 				+ "Adjacency penalty: "
 				+ scores.penalty
@@ -349,7 +349,7 @@ public class ZScore {
 		} else if (penaltyType == ZScore.REACH_PENALTY) {
 			System.out.println(
 				"Reachability ZScore: "
-				+ scores.ZScore 
+				+ scores.zScore 
 				+ "\n"
 				+ "Reachability penalty: "
 				+ scores.penalty

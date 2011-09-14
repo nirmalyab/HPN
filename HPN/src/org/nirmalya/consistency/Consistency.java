@@ -1,15 +1,28 @@
 package org.nirmalya.consistency;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.FactoryConfigurationError;
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.nirmalya.hpn.HPNUlilities;
 import org.nirmalya.hpn.Scores;
 import org.nirmalya.hpn.ZScore;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -17,7 +30,9 @@ import com.google.common.collect.Sets;
 
 public class Consistency {
 
-	int penaltyType;
+	/* For this experiment, we assume the penalty to be always ADJ_PENALTY (=0). */
+	int penaltyType = ZScore.ADJ_PENALTY;
+
 	String codePath;
 	int partitionSize;
 
@@ -32,20 +47,32 @@ public class Consistency {
 	String inheritedLocalLevelFile;
 
 	String oriLevelFile;
-
 	int totalGraphs;
 
-	public Consistency(String organism, String xmlFile, String oriGraphFile,
+	String species;
+
+	/**
+	 * 
+	 * @param species
+	 * @param xmlFile
+	 * @param oriGraphFile
+	 * @param codePath
+	 * @param partitionSize
+	 * @param oriLevel
+	 * @param totalGraphs
+	 */
+	public Consistency(String species, String xmlFile, String oriGraphFile,
 			String codePath, int partitionSize, int oriLevel, int totalGraphs) {
 
-		this.penaltyType = ZScore.ADJ_PENALTY;
+		this.species = species;
 		this.codePath = codePath;
 		this.partitionSize = partitionSize;
 		this.totalGraphs = totalGraphs;
 
-		this.subNetGenes = getSubNetGenes(organism, xmlFile);
+		this.subNetGenes = getSubNetGenes(species, xmlFile);
 		this.subNetwork = getSubNetwork(subNetGenes, oriGraphFile);
 		HPNUlilities.dumpLocalGraph(subNetwork, subNetFile);
+		/* Create level file for the original graph */
 		HPNUlilities.createLevelFile(codePath, oriGraphFile, oriLevel,
 				globalLevelFile, penaltyType, partitionSize);
 
@@ -61,11 +88,81 @@ public class Consistency {
 	 */
 	Set<String> getSubNetGenes(String organism, String file) {
 
-		Set<String> subNetGenes = Sets.newHashSet();
+		Set<String> localSubNetGenes = Sets.newHashSet();
+		Document doc = openDoc(file);
 
-		/* Process the XML file */
+		// Now I got the doc. So I can traverse the file
+		Element root = doc.getDocumentElement();
 
-		return subNetGenes;
+		NodeList nodes = root.getChildNodes();
+
+		for (int i = 0; i < nodes.getLength(); i++) {
+			Node node = nodes.item(i);
+
+			if (node.getNodeName().equals("entry")) {
+
+				String localName = null;
+				String objType = null;
+
+				NamedNodeMap localAttrs = node.getAttributes();
+
+				for (int k = 0; k < localAttrs.getLength(); k++) {
+
+					Node localAt = localAttrs.item(k);
+
+					if (localAt.getNodeName().equals("name")) {
+						localName = localAt.getNodeValue();
+					} else if (localAt.getNodeName().equals("type")) {
+						objType = localAt.getNodeValue();
+					}
+				}
+
+				processEntry(localSubNetGenes, localName, objType);
+			}
+
+		}
+		return localSubNetGenes;
+	}
+
+	private Document openDoc(String file) {
+		Document doc = null;
+		try {
+			DocumentBuilderFactory factory = DocumentBuilderFactory
+					.newInstance();
+			DocumentBuilder parser = factory.newDocumentBuilder();
+			doc = parser.parse(file);
+			// System.out.println(fileName + " is well-formed.");
+		} catch (SAXException e) {
+			System.out.println(file + " is not well-formed.");
+		} catch (IOException e) {
+			System.out
+					.println("Due to an IOException, the parser could not check "
+							+ file);
+		} catch (FactoryConfigurationError e) {
+			System.out.println("Could not locate a factory class");
+		} catch (ParserConfigurationException e) {
+			System.out.println("Could not locate a JAXP parser");
+		}
+		return doc;
+	}
+
+	private void processEntry(Set<String> localSubNetGenes, String localName,
+			String objType) {
+		if (objType.equals("gene")) {
+
+			String buffer = localName;
+			String[] localStrs = buffer.split("\\s+");
+
+			for (String localStr : localStrs) {
+				if (localStr.startsWith(species)) {
+					int index = localStr.indexOf(":");
+					String subString = localStr.substring(index + 1);
+					if (!localSubNetGenes.contains(subString)) {
+						localSubNetGenes.add(subString);
+					}
+				}
+			}
+		}
 	}
 
 	Multimap<String, String> getSubNetwork(Set<String> subNetGenes,
@@ -108,11 +205,17 @@ public class Consistency {
 
 	public ConScores getConScores(String globalLevelFile, int level) {
 
-		/* Get the localLevel */
-
-		/* get the local ZScore and penalty */
-
+		/*
+		 * This obtains the inherited local level and put that into
+		 * inheritedLocalLevelFile.
+		 */
 		int inheritedLevel = getLevel(subNetGenes, oriLevelFile);
+		// Now we can calculate the zscores on that inheritedLocalLevelFile.
+
+		ZScore zscoreInherited = new ZScore(subNetFile,
+				inheritedLocalLevelFile, penaltyType);
+		Scores scoreInherited = zscoreInherited.getZScore(totalGraphs,
+				penaltyType);
 
 		/* local the global level */
 		HPNUlilities.createLevelFile(codePath, subNetFile, inheritedLevel,
@@ -120,10 +223,13 @@ public class Consistency {
 
 		/* get the global ZScore and penalty */
 
-		ZScore zscoreGlobal = new ZScore(subNetFile, calculateLocalLevelFile,
+		ZScore zscoreCalculated = new ZScore(subNetFile,
+				calculateLocalLevelFile, penaltyType);
+		Scores scoreCalculated = zscoreCalculated.getZScore(totalGraphs,
 				penaltyType);
-		Scores globalSores = zscoreGlobal.getZScore(totalGraphs, penaltyType);
-		return null;
+		return new ConScores(scoreInherited.getZScore(), scoreInherited
+				.getPenalty(), scoreCalculated.getZScore(), scoreCalculated
+				.getPenalty());
 
 	}
 
@@ -132,8 +238,12 @@ public class Consistency {
 		Set<Integer> localSet = Sets.newHashSet();
 
 		try {
+
+			PrintWriter outFile = new PrintWriter(new FileWriter(
+					inheritedLocalLevelFile));
 			BufferedReader inFile = new BufferedReader(new FileReader(
 					oriLevelFile2));
+
 			String regex = "^(\\S+)\\s+(\\S+)";
 			Pattern pat = Pattern.compile(regex);
 
@@ -149,11 +259,16 @@ public class Consistency {
 					if (subNetGenes2.contains(key) && val != -1
 							&& !localSet.contains(val)) {
 
+						outFile.println(key + " " + val);
+
 						localSet.add(val);
 
 					}
 				}
 			}
+
+			outFile.close();
+
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -165,8 +280,18 @@ public class Consistency {
 
 class ConScores {
 
-	double globalZScore;
-	int globalPenalty;
-	double localZScore;
-	int localPenalty;
+	public ConScores(double zScoreInherited, int penaltyInherited,
+			double zScorecalculated, int penaltyCalculated) {
+
+		this.zScoreInherited = zScoreInherited;
+		this.penaltyInherited = penaltyInherited;
+		this.zScorecalculated = zScorecalculated;
+		this.penaltyCalculated = penaltyCalculated;
+	}
+
+	double zScoreInherited;
+	int penaltyInherited;
+	double zScorecalculated;
+	int penaltyCalculated;
+
 }

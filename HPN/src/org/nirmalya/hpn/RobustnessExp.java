@@ -39,7 +39,7 @@ public class RobustnessExp {
 			ZScore zscore = new ZScore(graphName, levelValFile, penaltyType);
 			Scores scores = zscore.getZScore(totalGraphs, penaltyType);
 			
-			String outStr = " Shuffle Count: No shuffle " + " Penalty: " + scores.penalty + " ZScore: " + scores.ZScore;
+			String outStr = " Shuffle Count: No shuffle " + " Penalty: " + scores.penalty + " ZScore: " + scores.zScore;
 			
 			//System.out.println(outStr);				
 			outWriter.println(outStr);
@@ -51,7 +51,7 @@ public class RobustnessExp {
 				zscore = new ZScore(mapList.get(j), levelValFile, penaltyType);
 				scores = zscore.getZScore(totalGraphs, penaltyType);
 				
-				outStr = " Shuffle Count: " + shuffleCountVec.get(j)+ " Penalty: " + scores.penalty + " ZScore: " + scores.ZScore;
+				outStr = " Shuffle Count: " + shuffleCountVec.get(j)+ " Penalty: " + scores.penalty + " ZScore: " + scores.zScore;
 				
 				//System.out.println(outStr);				
 				outWriter.println(outStr);

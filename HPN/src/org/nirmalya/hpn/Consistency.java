@@ -1,4 +1,4 @@
-package org.nirmalya.consistency;
+package org.nirmalya.hpn;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -14,9 +14,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.FactoryConfigurationError;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.nirmalya.hpn.HPNUlilities;
-import org.nirmalya.hpn.Scores;
-import org.nirmalya.hpn.ZScore;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;

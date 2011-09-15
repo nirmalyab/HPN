@@ -1,6 +1,7 @@
 package org.nirmalya.consistency;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -31,43 +32,75 @@ import com.google.common.collect.Sets;
 public class Consistency {
 
 	/* For this experiment, we assume the penalty to be always ADJ_PENALTY (=0). */
-	int penaltyType = ZScore.ADJ_PENALTY;
+	private int penaltyType = ZScore.ADJ_PENALTY;
 
-	String codePath;
-	int partitionSize;
+	private Set<String> subNetGenes;
+	private Multimap<String, String> subNetwork;
 
-	Set<String> subNetGenes;
+	
+	private String subNetFile;
+	private String globalLevelFile;
+	private String calculateLocalLevelFile;
+	private String inheritedLocalLevelFile;
 
-	Multimap<String, String> subNetwork;
-	/* Contains the subnetwork */
-	String subNetFile;
+	private String species;
+	private String xmlFile;
+	private String oriGraphFile;
+	private String codePath;
+	private int oriLevel;	
+	private int partitionSize;
+	private int totalGraphs;
+	
 
-	String globalLevelFile;
-	String calculateLocalLevelFile;
-	String inheritedLocalLevelFile;
-
-	String oriLevelFile;
-	int totalGraphs;
-
-	String species;
-
-	/**
-	 * 
-	 * @param species
-	 * @param xmlFile
-	 * @param oriGraphFile
-	 * @param codePath
-	 * @param partitionSize
-	 * @param oriLevel
-	 * @param totalGraphs
-	 */
-	public Consistency(String species, String xmlFile, String oriGraphFile,
-			String codePath, int partitionSize, int oriLevel, int totalGraphs) {
-
-		this.species = species;
-		this.codePath = codePath;
-		this.partitionSize = partitionSize;
-		this.totalGraphs = totalGraphs;
+	
+	public Consistency(String argFile) {
+		try {
+			BufferedReader inFile = new BufferedReader(new FileReader(argFile));
+			
+			String regex = "^(\\S+)\\s+(\\S+)";
+			Pattern pat = Pattern.compile(regex);
+			
+			String line = null;
+			while (null != (line = inFile.readLine())) {
+				Matcher mat = pat.matcher(line);
+				
+				if (mat.find()) {
+					String key = mat.group(1);
+					String val = mat.group(2);
+					
+					if (key.equals("species")) {
+						this.species = val;
+					} else if (key.equals("xmlFile")) {
+						this.xmlFile = val;
+					} else if (key.equals("oriGraphFile")) {
+						this.oriGraphFile = val;
+					} else if (key.equals("codePath")) {
+						this.codePath = val;
+					} else if (key.equals("oriLevel")) {
+						this.oriLevel = Integer.parseInt(val);
+					} else if (key.equals("partitionSize")) {
+						this.partitionSize = Integer.parseInt(val);
+					} else if (key.equals("totalGraphs")) {
+						this.totalGraphs = Integer.parseInt(val);
+					} else {
+						String errStr = "Illegal argument: " + 
+												key + " " + 
+												val;
+						throw new RuntimeException(errStr);
+					}
+				}
+			}
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+	}
+	
+	
+	public void initialize() {
 
 		this.subNetGenes = getSubNetGenes(species, xmlFile);
 		this.subNetwork = getSubNetwork(subNetGenes, oriGraphFile);
@@ -86,7 +119,7 @@ public class Consistency {
 	 * @param file
 	 * @return
 	 */
-	Set<String> getSubNetGenes(String organism, String file) {
+	private Set<String> getSubNetGenes(String organism, String file) {
 
 		Set<String> localSubNetGenes = Sets.newHashSet();
 		Document doc = openDoc(file);
@@ -165,7 +198,7 @@ public class Consistency {
 		}
 	}
 
-	Multimap<String, String> getSubNetwork(Set<String> subNetGenes,
+	private Multimap<String, String> getSubNetwork(Set<String> subNetGenes,
 			String oriFile) {
 		Multimap<String, String> localMap = HashMultimap.create();
 
@@ -203,13 +236,14 @@ public class Consistency {
 
 	}
 
-	public ConScores getConScores(String globalLevelFile, int level) {
+	public ConScores getConScores() {
 
 		/*
 		 * This obtains the inherited local level and put that into
 		 * inheritedLocalLevelFile.
 		 */
-		int inheritedLevel = getLevel(subNetGenes, oriLevelFile);
+		int inheritedLevel = getLevel(subNetGenes, globalLevelFile,
+				inheritedLocalLevelFile);
 		// Now we can calculate the zscores on that inheritedLocalLevelFile.
 
 		ZScore zscoreInherited = new ZScore(subNetFile,
@@ -227,20 +261,21 @@ public class Consistency {
 				calculateLocalLevelFile, penaltyType);
 		Scores scoreCalculated = zscoreCalculated.getZScore(totalGraphs,
 				penaltyType);
-		return new ConScores(scoreInherited.getZScore(), scoreInherited
-				.getPenalty(), scoreCalculated.getZScore(), scoreCalculated
-				.getPenalty());
+		return new ConScores(scoreInherited.getZScore(),
+				scoreInherited.getPenalty(), scoreCalculated.getZScore(),
+				scoreCalculated.getPenalty());
 
 	}
 
-	private int getLevel(Set<String> subNetGenes2, String oriLevelFile2) {
+	private int getLevel(Set<String> subNetGenes2, String oriLevelFile2,
+			String derivedLevelFile) {
 
 		Set<Integer> localSet = Sets.newHashSet();
 
 		try {
 
 			PrintWriter outFile = new PrintWriter(new FileWriter(
-					inheritedLocalLevelFile));
+					derivedLevelFile));
 			BufferedReader inFile = new BufferedReader(new FileReader(
 					oriLevelFile2));
 
@@ -256,12 +291,13 @@ public class Consistency {
 					String key = mat.group(1);
 					int val = Integer.parseInt(mat.group(2));
 
-					if (subNetGenes2.contains(key) && val != -1
-							&& !localSet.contains(val)) {
+					if (subNetGenes2.contains(key)) {
 
 						outFile.println(key + " " + val);
 
-						localSet.add(val);
+						if (-1 != val && !localSet.contains(val)) {
+							localSet.add(val);
+						}
 
 					}
 				}
@@ -276,6 +312,20 @@ public class Consistency {
 
 		return localSet.size();
 	}
+	
+	public static void main(String[] args) {
+		Consistency consis = new Consistency(args[0]);
+		consis.initialize();
+		ConScores score = consis.getConScores();
+		System.out.println(
+						"zScoreInherited: " + score.zScoreInherited +
+						" penaltyInherited: " + score.penaltyInherited +
+						" zScorecalculated: " + score.zScorecalculated +
+						" penaltyCalculated: " + score.penaltyCalculated
+				);
+		
+	}
+	
 }
 
 class ConScores {

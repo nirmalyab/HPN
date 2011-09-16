@@ -27,8 +27,7 @@ import com.google.common.collect.Sets;
 
 public class Consistency {
 
-	/* For this experiment, 
-	 * we assume the penalty to be always ADJ_PENALTY (=0). */
+	/* For this experiment, we assume the penalty to be always ADJ_PENALTY (=0). */
 	private int penaltyType = ZScore.ADJ_PENALTY;
 
 	private Set<String> subNetGenes;

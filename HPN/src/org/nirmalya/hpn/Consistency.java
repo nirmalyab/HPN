@@ -1,7 +1,6 @@
-package org.nirmalya.consistency;
+package org.nirmalya.hpn;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,9 +14,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.FactoryConfigurationError;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.nirmalya.hpn.HPNUlilities;
-import org.nirmalya.hpn.Scores;
-import org.nirmalya.hpn.ZScore;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -37,7 +33,7 @@ public class Consistency {
 	private Set<String> subNetGenes;
 	private Multimap<String, String> subNetwork;
 
-	
+	private String resultDir;
 	private String subNetFile;
 	private String globalLevelFile;
 	private String calculateLocalLevelFile;
@@ -54,6 +50,23 @@ public class Consistency {
 
 	
 	public Consistency(String argFile) {
+		readArgs(argFile);
+		createPaths();		
+		
+	}
+
+
+	private void createPaths() {
+
+		subNetFile = resultDir + "/subnet.txt";
+		globalLevelFile = resultDir + "/globalLevel.txt";
+		calculateLocalLevelFile = resultDir + "/calculatedLocalLevel.txt";
+		inheritedLocalLevelFile = resultDir + "/inheritedLocalLevel.txt";		
+		
+	}
+
+
+	private void readArgs(String argFile) {
 		try {
 			BufferedReader inFile = new BufferedReader(new FileReader(argFile));
 			
@@ -82,6 +95,8 @@ public class Consistency {
 						this.partitionSize = Integer.parseInt(val);
 					} else if (key.equals("totalGraphs")) {
 						this.totalGraphs = Integer.parseInt(val);
+					} else if (key.equals("resultDir")) {
+						this.resultDir = val;
 					} else {
 						String errStr = "Illegal argument: " + 
 												key + " " + 
@@ -95,8 +110,6 @@ public class Consistency {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		
 	}
 	
 	
@@ -201,6 +214,8 @@ public class Consistency {
 	private Multimap<String, String> getSubNetwork(Set<String> subNetGenes,
 			String oriFile) {
 		Multimap<String, String> localMap = HashMultimap.create();
+		
+		System.out.println(subNetGenes.toString());
 
 		try {
 
@@ -217,9 +232,17 @@ public class Consistency {
 				if (mat.find()) {
 					String first = mat.group(1);
 					String sec = mat.group(2);
-
+					
+					boolean valFirst = subNetGenes.contains(first);
+					boolean valSec = subNetGenes.contains(sec);
+					
+					if (valFirst || valSec) {
+						//System.out.println("Discovering a pair: " + subNetGenes.contains(first) + " " + subNetGenes.contains(sec));
+					}
+					
 					if (subNetGenes.contains(first)
 							&& subNetGenes.contains(sec)) {
+						System.out.println("Adding a pair: " + first + " " + sec);
 						localMap.put(first, sec);
 					}
 				}

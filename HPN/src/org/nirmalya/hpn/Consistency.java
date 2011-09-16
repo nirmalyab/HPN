@@ -25,6 +25,11 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+/**
+ * 
+ * @author nirmalya
+ *
+ */
 public class Consistency {
 
 	/* For this experiment, we assume the penalty to be always ADJ_PENALTY (=0). */

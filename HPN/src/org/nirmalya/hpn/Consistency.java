@@ -28,7 +28,7 @@ import com.google.common.collect.Sets;
 /**
  * 
  * @author nirmalya
- *
+ * 
  */
 public class Consistency {
 
@@ -43,49 +43,47 @@ public class Consistency {
 	private String globalLevelFile;
 	private String calculateLocalLevelFile;
 	private String inheritedLocalLevelFile;
+	private String outFile;
 
 	private String species;
 	private String xmlFile;
 	private String oriGraphFile;
 	private String codePath;
-	private int oriLevel;	
+	private int oriLevel;
 	private int partitionSize;
 	private int totalGraphs;
-	
 
-	
 	public Consistency(String argFile) {
 		readArgs(argFile);
-		createPaths();		
-		
-	}
+		createPaths();
 
+	}
 
 	private void createPaths() {
 
 		subNetFile = resultDir + "/subnet.txt";
 		globalLevelFile = resultDir + "/globalLevel.txt";
 		calculateLocalLevelFile = resultDir + "/calculatedLocalLevel.txt";
-		inheritedLocalLevelFile = resultDir + "/inheritedLocalLevel.txt";		
-		
-	}
+		inheritedLocalLevelFile = resultDir + "/inheritedLocalLevel.txt";
+		outFile = resultDir + "/outFile.txt";
 
+	}
 
 	private void readArgs(String argFile) {
 		try {
 			BufferedReader inFile = new BufferedReader(new FileReader(argFile));
-			
+
 			String regex = "^(\\S+)\\s+(\\S+)";
 			Pattern pat = Pattern.compile(regex);
-			
+
 			String line = null;
 			while (null != (line = inFile.readLine())) {
 				Matcher mat = pat.matcher(line);
-				
+
 				if (mat.find()) {
 					String key = mat.group(1);
 					String val = mat.group(2);
-					
+
 					if (key.equals("species")) {
 						this.species = val;
 					} else if (key.equals("xmlFile")) {
@@ -103,21 +101,18 @@ public class Consistency {
 					} else if (key.equals("resultDir")) {
 						this.resultDir = val;
 					} else {
-						String errStr = "Illegal argument: " + 
-												key + " " + 
-												val;
+						String errStr = "Illegal argument: " + key + " " + val;
 						throw new RuntimeException(errStr);
 					}
 				}
 			}
-			
+
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-	
-	
+
 	public void initialize() {
 
 		this.subNetGenes = getSubNetGenes(species, xmlFile);
@@ -219,7 +214,7 @@ public class Consistency {
 	private Multimap<String, String> getSubNetwork(Set<String> subNetGenes,
 			String oriFile) {
 		Multimap<String, String> localMap = HashMultimap.create();
-		
+
 		System.out.println(subNetGenes.toString());
 
 		try {
@@ -237,17 +232,20 @@ public class Consistency {
 				if (mat.find()) {
 					String first = mat.group(1);
 					String sec = mat.group(2);
-					
+
 					boolean valFirst = subNetGenes.contains(first);
 					boolean valSec = subNetGenes.contains(sec);
-					
+
 					if (valFirst || valSec) {
-						//System.out.println("Discovering a pair: " + subNetGenes.contains(first) + " " + subNetGenes.contains(sec));
+						// System.out.println("Discovering a pair: " +
+						// subNetGenes.contains(first) + " " +
+						// subNetGenes.contains(sec));
 					}
-					
+
 					if (subNetGenes.contains(first)
 							&& subNetGenes.contains(sec)) {
-						System.out.println("Adding a pair: " + first + " " + sec);
+						System.out.println("Adding a pair: " + first + " "
+								+ sec);
 						localMap.put(first, sec);
 					}
 				}
@@ -289,9 +287,27 @@ public class Consistency {
 				calculateLocalLevelFile, penaltyType);
 		Scores scoreCalculated = zscoreCalculated.getZScore(totalGraphs,
 				penaltyType);
-		return new ConScores(scoreInherited.getZScore(),
+
+		PrintWriter out = null;
+		try {
+			out = new PrintWriter(new FileWriter(outFile));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		ConScores score = new ConScores(scoreInherited.getZScore(),
 				scoreInherited.getPenalty(), scoreCalculated.getZScore(),
 				scoreCalculated.getPenalty());
+
+		out.println("zScoreInherited: " + score.zScoreInherited
+				+ " penaltyInherited: " + score.penaltyInherited
+				+ " zScorecalculated: " + score.zScorecalculated
+				+ " penaltyCalculated: " + score.penaltyCalculated);
+
+		out.close();
+
+		return score;
 
 	}
 
@@ -340,20 +356,18 @@ public class Consistency {
 
 		return localSet.size();
 	}
-	
+
 	public static void main(String[] args) {
 		Consistency consis = new Consistency(args[0]);
 		consis.initialize();
 		ConScores score = consis.getConScores();
-		System.out.println(
-						"zScoreInherited: " + score.zScoreInherited +
-						" penaltyInherited: " + score.penaltyInherited +
-						" zScorecalculated: " + score.zScorecalculated +
-						" penaltyCalculated: " + score.penaltyCalculated
-				);
-		
+		System.out.println("zScoreInherited: " + score.zScoreInherited
+				+ " penaltyInherited: " + score.penaltyInherited
+				+ " zScorecalculated: " + score.zScorecalculated
+				+ " penaltyCalculated: " + score.penaltyCalculated);
+
 	}
-	
+
 }
 
 class ConScores {

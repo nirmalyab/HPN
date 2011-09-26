@@ -342,7 +342,6 @@ public class Consistency {
 						if (-1 != val && !localSet.contains(val)) {
 							localSet.add(val);
 						}
-
 					}
 				}
 			}

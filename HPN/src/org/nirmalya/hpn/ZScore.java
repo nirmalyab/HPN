@@ -64,6 +64,20 @@ public class ZScore {
 		readLevelMap(levelKeyFile, levelValFile);
 		zScoreExtra(penaltyType);
 	}
+	
+	/** 
+	 * This constructor is specifically required for Raja Jyoti's method.
+	 * @param oriGraphFile
+	 * @param keys
+	 * @param vals
+	 * @param penaltyType
+	 */
+	public ZScore(String oriGraphFile, List<String> keys, List<Integer> vals, int penaltyType) {
+		localGraph = new Graph(oriGraphFile);
+		this.levelKeys = keys;
+		this.levelVals = vals;
+		zScoreExtra(penaltyType);
+	}
 
 	private void zScoreExtra(int penaltyType) {
 		localGraph.setLevelKeys(levelKeys);
@@ -283,6 +297,14 @@ public class ZScore {
 		createPenalties(totalGraphs, penaltyType);	
 		return calculateZScore(penaltyType);
 		
+	}
+	
+	public int getOriAdjPenalty() {
+		return localGraph.calculateAdjacencyPenalty(levelVals);
+	}
+	
+	public int getOriReachPenalty() {
+		return localGraph.calcualteReachabilityPenalty(levelVals);
 	}
 
 	Scores calculateZScore(int penaltyType) {

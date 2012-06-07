@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+/* This file is related to RajaJothi method */
 public class ExtractRJ {
 	HashMap<String, List<Integer>> randMap = Maps.newHashMap();
 	

@@ -1,6 +1,7 @@
 package org.nirmalya.hpn;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -52,6 +53,10 @@ public class Consistency {
 	private int oriLevel;
 	private int partitionSize;
 	private int totalGraphs;
+	
+	int incoming  = 0;
+	int outgoing = 0;
+	int totalSubGeneCount ;
 
 	public Consistency(String argFile) {
 		readArgs(argFile);
@@ -113,6 +118,27 @@ public class Consistency {
 		}
 	}
 
+	/** This function will calculate the number of incoming and outgoing edges in a sub-network */ 
+	public void initializeBoundary() {
+
+		this.subNetGenes = getSubNetGenes(species, xmlFile);
+		this.subNetwork = getSubNetwork(subNetGenes, oriGraphFile);
+		
+		Set<String> comSubNetGenes = Sets.newHashSet();
+		comSubNetGenes.addAll(this.subNetwork.keySet());
+		comSubNetGenes.addAll(this.subNetwork.values());
+		
+		totalSubGeneCount = comSubNetGenes.size();
+		
+		countBoundaryEdges(comSubNetGenes, oriGraphFile);
+		
+		
+
+	}
+	
+	/** This initialize is for calculating the standard consistency result applicable for the 
+	 * commented main.
+	 */
 	public void initialize() {
 
 		this.subNetGenes = getSubNetGenes(species, xmlFile);
@@ -123,6 +149,7 @@ public class Consistency {
 				globalLevelFile, penaltyType, partitionSize);
 
 	}
+
 
 	/**
 	 * This function accepts an XML file and the name of the organism and
@@ -210,12 +237,56 @@ public class Consistency {
 			}
 		}
 	}
+	
+	void countBoundaryEdges(Set<String> subNetGenes,
+			String oriFile) {
+		try {
+			BufferedReader inFile = new BufferedReader(new FileReader(oriFile));
+			
+			String regex = "^(\\S+)\\s+(\\S+)";
+			Pattern pat = Pattern.compile(regex);
+			
+			String line = null;
+			
+			while (null != (line = inFile.readLine())) {
+				Matcher mat = pat.matcher(line);
+
+				if (mat.find()) {
+					String first = mat.group(1);
+					String sec = mat.group(2);
+
+					boolean valFirst = subNetGenes.contains(first);
+					boolean valSec = subNetGenes.contains(sec);
+
+					if (!valFirst && valSec) {
+						incoming++;
+					}
+					
+					if (valFirst && !valSec) {
+						outgoing++;
+					}
+
+					
+				}
+			}
+
+			inFile.close();
+			
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		
+
+	}
 
 	private Multimap<String, String> getSubNetwork(Set<String> subNetGenes,
 			String oriFile) {
 		Multimap<String, String> localMap = HashMultimap.create();
 
-		System.out.println(subNetGenes.toString());
+		//System.out.println(subNetGenes.toString());
 
 		try {
 
@@ -244,8 +315,8 @@ public class Consistency {
 
 					if (subNetGenes.contains(first)
 							&& subNetGenes.contains(sec)) {
-						System.out.println("Adding a pair: " + first + " "
-								+ sec);
+						//System.out.println("Adding a pair: " + first + " "
+								//+ sec);
 						localMap.put(first, sec);
 					}
 				}
@@ -356,6 +427,7 @@ public class Consistency {
 		return localSet.size();
 	}
 
+	/**
 	public static void main(String[] args) {
 		Consistency consis = new Consistency(args[0]);
 		consis.initialize();
@@ -366,6 +438,34 @@ public class Consistency {
 				+ " penaltyCalculated: " + score.penaltyCalculated);
 
 	}
+	
+	*/
+	
+	
+	public static void main(String[] args) {
+		Consistency consis = new Consistency(args[0]);
+		consis.initializeBoundary();
+		
+		int em = consis.subNetwork.size();
+		int vm = consis.totalSubGeneCount;
+		int ein = consis.incoming;
+		int eout = consis.outgoing;
+		
+		System.out.println(
+				" Gene in subnetwork-VM: " + vm +
+				" Edges in subnetwork-EM: " + em +
+				" Incoming-EIN: " + ein +
+				" Outgoing-EOUT: " +  eout +
+				" EIN / VM: " + ein/(double) vm +
+				" EOUT / VM: " + eout/(double) vm);
+				
+				
+		
+
+	}
+	
+	
+	
 
 }
 
